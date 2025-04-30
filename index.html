@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talksy: Bridging Communication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap; /* Added for better mobile responsiveness */
+        }
+        .video-section, .controls-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 320px;
+        }
+        #canvas {
+            border: 2px solid #333;
+            border-radius: 8px;
+            width: 320px;
+            height: 240px;
+        }
+        .output, .button {
+            margin: 10px 0;
+        }
+        .button button {
+            padding: 8px 16px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #startSign { background-color: #ff4d4d; color: white; }
+        #stopSign { background-color: #808080; color: white; }
+        #clearAll { background-color: #808080; color: white; }
+        #startSpeech { background-color: #4CAF50; color: white; }
+        #stopSpeech { background-color: #808080; color: white; }
+        #startTTS { background-color: #ff4d4d; color: white; }
+        #stopTTS { background-color: #808080; color: white; }
+        h1 { color: #1E90FF; text-align: center; }
+        #error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="video-section">
+            <h1>Talksy: Bridging Communication</h1>
+            <canvas id="canvas" width="320" height="240"></canvas>
+            <div class="output">Word: <span id="wordOutput">None</span></div>
+            <div class="button">
+                <button id="startSign">Start Sign</button>
+                <button id="stopSign" disabled>Stop Sign</button>
+            </div>
+            <div id="error"></div>
+        </div>
+        <div class="controls-section">
+            <div class="output">Speech-to-Text</div>
+            <div class="output">Spoken Text: <span id="spokenText">None</span></div>
+            <div class="button">
+                <button id="startSpeech">Start Speech</button>
+                <button id="stopSpeech" disabled>Stop Speech</button>
+            </div>
+            <div class="output">Text-to-Speech</div>
+            <input type="text" id="ttsInput" placeholder="Type here to speak" style="width: 100%; padding: 5px;">
+            <div class="output">TTS Status: <span id="ttsStatus">Inactive</span></div>
+            <div class="button">
+                <button id="startTTS">Start TTS</button>
+                <button id="stopTTS" disabled>Stop TTS</button>
+                <button id="clearAll">Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.18.0/dist/tf.min.js"></script>
+    
+    <!-- Load MediaPipe libraries correctly -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"></script>
+    
+    <!-- Use Web Speech API directly instead of the missing library -->
+    
+    <!-- Include ResponsiveVoice with a free non-commercial key -->
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=nWH1ced6"></script>
+    <!-- Fallback for speech synthesis if ResponsiveVoice fails -->
+    <script>
+        // Check if ResponsiveVoice loaded correctly
+        window.addEventListener('load', function() {
+            if (typeof responsiveVoice === 'undefined') {
+                console.warn("ResponsiveVoice failed to load. Using browser's native speech synthesis if available.");
+            }
+        });
+    </script>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const wordOutput = document.getElementById('wordOutput');
+        const errorDiv = document.getElementById('error');
+        const startSign = document.getElementById('startSign');
+        const stopSign = document.getElementById('stopSign');
+        const startSpeech = document.getElementById('startSpeech');
+        const stopSpeech = document.getElementById('stopSpeech');
+        const spokenText = document.getElementById('spokenText');
+        const ttsInput = document.getElementById('ttsInput');
+        const startTTS = document.getElementById('startTTS');
+        const stopTTS = document.getElementById('stopTTS');
+        const ttsStatus = document.getElementById('ttsStatus');
+        const clearAll = document.getElementById('clearAll');
+        let video;
+        let camera = null;
+        let hands = null;
+        let recognition = null;
+        let isTTSActive = false;
+        let isPredicting = false;
+
+        // Set up webcam and draw to canvas
+        async function setupCamera() {
+            try {
+                video = document.createElement('video');
+                video.width = 320;
+                video.height = 240;
+                video.autoplay = true;
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                await video.play(); // Ensure video is playing
+
+                // Initialize MediaPipe Hands module properly
+                const handModule = window.Hands;
+                if (!handModule) {
+                    throw new Error("MediaPipe Hands module not loaded correctly");
+                }
+                
+                hands = new handModule({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}`;
+                    }
+                });
+                
+                hands.setOptions({
+                    maxNumHands: 1,
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.7,
+                    modelComplexity: 1
+                });
+                
+                hands.onResults(onResults);
+
+                // Initialize camera utilities properly
+                const cameraModule = window.Camera;
+                if (!cameraModule) {
+                    throw new Error("MediaPipe Camera module not loaded correctly");
+                }
+                
+                camera = new cameraModule(video, {
+                    onFrame: async () => {
+                        if (isPredicting && hands) {
+                            await hands.send({image: video});
+                        }
+                    },
+                    width: 320,
+                    height: 240
+                });
+                
+                return video;
+            } catch (err) {
+                errorDiv.textContent = 'Error setting up camera: ' + err.message;
+                console.error('Camera setup error:', err);
+                throw err;
+            }
+        }
+
+        // Process hand landmarks
+        function onResults(results) {
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                
+                // Use MediaPipe drawing utilities if available
+                if (window.drawConnectors && window.drawLandmarks) {
+                    // If MediaPipe drawing utilities are available
+                    window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, 
+                        {color: '#00FF00', lineWidth: 2});
+                    window.drawLandmarks(ctx, landmarks, 
+                        {color: '#FF0000', lineWidth: 1, radius: 3});
+                } else {
+                    // Fall back to our own drawing function
+                    drawLandmarks(ctx, landmarks, {color: '#00FF00', fillColor: '#FF0000'});
+                }
+
+                // Gesture recognition rules
+                const gesture = detectGesture(landmarks);
+                wordOutput.textContent = `${gesture} (Rule-based)`;
+            } else {
+                wordOutput.textContent = 'None (Rule-based)';
+            }
+            ctx.restore();
+        }
+
+        // Draw hand landmarks
+        function drawLandmarks(ctx, landmarks, style) {
+            ctx.fillStyle = style.fillColor;
+            ctx.strokeStyle = style.color;
+            ctx.lineWidth = 2;
+            for (let landmark of landmarks) {
+                ctx.beginPath();
+                ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 3, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        // Detect gesture based on landmarks
+        function detectGesture(landmarks) {
+            const fingers = {
+                thumb: landmarks[4].y < landmarks[3].y && Math.abs(landmarks[4].x - landmarks[3].x) > 0.1,
+                index: landmarks[8].y < landmarks[6].y,
+                middle: landmarks[12].y < landmarks[10].y,
+                ring: landmarks[16].y < landmarks[14].y,
+                pinky: landmarks[20].y < landmarks[18].y
+            };
+
+            // Define gesture rules
+            if (fingers.thumb && !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky) {
+                return 'Thank You'; // Changed from 'Yes' to 'Thank You' (thumb up, others curled)
+            } else if (fingers.index && fingers.middle && !fingers.thumb && !fingers.ring && !fingers.pinky) {
+                return 'Bad'; // Index and middle up, others curled
+            } else if (fingers.index && fingers.middle && fingers.ring && !fingers.thumb && !fingers.pinky) {
+                return 'Good'; // Index, middle, ring up, others curled
+            } else if (fingers.index && !fingers.thumb && !fingers.middle && !fingers.ring && !fingers.pinky) {
+                return 'No'; // Index up, others curled
+            } else if (fingers.thumb && fingers.index && Math.abs(landmarks[4].x - landmarks[8].x) < 0.1 &&
+                       landmarks[4].y > landmarks[8].y && !fingers.middle && !fingers.ring && !fingers.pinky) {
+                return 'Hello'; // Changed from 'Thank You' to 'Hello' (thumb and index forming a circle)
+            } else if (!fingers.thumb && fingers.index && fingers.middle && fingers.ring && fingers.pinky) {
+                return 'Yes'; // NEW: Four fingers up (index, middle, ring, pinky) with thumb closed
+            } else if (fingers.thumb && fingers.index && fingers.middle && fingers.ring && fingers.pinky) {
+                return 'Open Hand'; // Changed from 'Hello' to 'Open Hand' (all fingers spread)
+            }
+            return 'None';
+        }
+
+        // Start gesture recognition
+        startSign.addEventListener('click', async () => {
+            try {
+                startSign.disabled = true;
+                stopSign.disabled = false;
+                if (camera) {
+                    await camera.start();
+                    isPredicting = true;
+                } else {
+                    // If camera failed to initialize, try again
+                    await setupCamera();
+                    if (camera) {
+                        await camera.start();
+                        isPredicting = true;
+                    } else {
+                        throw new Error("Failed to initialize camera");
+                    }
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Error starting camera: ' + err.message;
+                startSign.disabled = false;
+                stopSign.disabled = true;
+            }
+        });
+
+        // Stop gesture recognition
+        stopSign.addEventListener('click', () => {
+            startSign.disabled = false;
+            stopSign.disabled = true;
+            if (camera) camera.stop();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            isPredicting = false;
+            wordOutput.textContent = 'None (Rule-based)';
+        });
+
+        // Speech-to-Text using Web Speech API
+        startSpeech.addEventListener('click', () => {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                errorDiv.textContent = 'Speech recognition not supported in this browser.';
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                const result = event.results[event.results.length - 1][0].transcript;
+                spokenText.textContent = result;
+            };
+
+            recognition.onerror = (event) => {
+                errorDiv.textContent = 'Speech recognition error: ' + event.error;
+            };
+
+            recognition.onend = () => {
+                // Only reset buttons if stop was not manually pressed
+                if (!startSpeech.disabled) return;
+                
+                startSpeech.disabled = false;
+                stopSpeech.disabled = true;
+            };
+
+            startSpeech.disabled = true;
+            stopSpeech.disabled = false;
+            recognition.start();
+        });
+
+        stopSpeech.addEventListener('click', () => {
+            if (recognition) {
+                recognition.stop();
+                startSpeech.disabled = false;
+                stopSpeech.disabled = true;
+            }
+        });
+
+        // Text-to-Speech - With fallback mechanism
+        startTTS.addEventListener('click', () => {
+            const text = ttsInput.value.trim();
+            if (text) {
+                // Check if ResponsiveVoice is available
+                if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+                    try {
+                        responsiveVoice.speak(text, "US English Female");
+                        ttsStatus.textContent = 'Active';
+                        isTTSActive = true;
+                        startTTS.disabled = true;
+                        stopTTS.disabled = false;
+                    } catch (e) {
+                        console.error("ResponsiveVoice error:", e);
+                        useBrowserTTS(text);
+                    }
+                } else {
+                    // Fallback to browser's native speech synthesis
+                    useBrowserTTS(text);
+                }
+            } else {
+                errorDiv.textContent = 'Please enter text to speak.';
+            }
+        });
+
+        // Browser's native TTS function
+        function useBrowserTTS(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.onstart = () => {
+                    ttsStatus.textContent = 'Active';
+                    isTTSActive = true;
+                    startTTS.disabled = true;
+                    stopTTS.disabled = false;
+                };
+                utterance.onend = () => {
+                    ttsStatus.textContent = 'Inactive';
+                    isTTSActive = false;
+                    startTTS.disabled = false;
+                    stopTTS.disabled = true;
+                };
+                speechSynthesis.speak(utterance);
+            } else {
+                errorDiv.textContent = 'Text-to-speech not supported in this browser.';
+                startTTS.disabled = false;
+                stopTTS.disabled = true;
+            }
+        }
+
+        stopTTS.addEventListener('click', () => {
+            if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+                try {
+                    responsiveVoice.cancel();
+                } catch (e) {
+                    console.error("ResponsiveVoice error on cancel:", e);
+                }
+            }
+            
+            // Also cancel browser's native speech synthesis
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+            
+            ttsStatus.textContent = 'Inactive';
+            isTTSActive = false;
+            startTTS.disabled = false;
+            stopTTS.disabled = true;
+        });
+
+        // Clear All
+        clearAll.addEventListener('click', () => {
+            wordOutput.textContent = 'None (Rule-based)';
+            spokenText.textContent = 'None';
+            ttsInput.value = '';
+            ttsStatus.textContent = 'Inactive';
+            errorDiv.textContent = '';
+            
+            if (isTTSActive) {
+                if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+                    try {
+                        responsiveVoice.cancel();
+                    } catch (e) {
+                        console.error("ResponsiveVoice error on cancel:", e);
+                    }
+                }
+                
+                // Also cancel browser's native speech synthesis
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                }
+                
+                startTTS.disabled = false;
+                stopTTS.disabled = true;
+                isTTSActive = false;
+            }
+            
+            if (recognition && !stopSpeech.disabled) {
+                recognition.stop();
+                startSpeech.disabled = false;
+                stopSpeech.disabled = true;
+            }
+            
+            if (isPredicting) {
+                isPredicting = false;
+                startSign.disabled = false;
+                stopSign.disabled = true;
+                if (camera) camera.stop();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        // Initialize application when document is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if MediaPipe modules are available
+            if (!window.Hands) {
+                errorDiv.textContent = 'MediaPipe Hands module not loaded. Sign language detection will not work.';
+            }
+            
+            if (!window.Camera) {
+                errorDiv.textContent += ' MediaPipe Camera module not loaded.';
+            }
+            
+            // Initialize camera when Sign Language detection is started
+            startSign.disabled = false;
+        });
+
+        // Main function
+        async function main() {
+            try {
+                // Only setup camera when needed (when user clicks Start Sign)
+                // This avoids unnecessary permission requests on page load
+                console.log("Talksy application initialized. Click 'Start Sign' to begin sign language detection.");
+            } catch (err) {
+                console.error('Main error:', err);
+                errorDiv.textContent = 'Initialization error: ' + err.message;
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>
