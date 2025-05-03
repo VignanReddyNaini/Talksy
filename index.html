@@ -339,7 +339,7 @@
             }
         }
 
-        // Process hand landmarks - FIXED VERSION FOR MOBILE
+        // Process hand landmarks - FIXED VERSION FOR CORRECT ALIGNMENT
         function onResults(results) {
             // Clear the canvas first
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -354,26 +354,36 @@
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
                 
-                // Use MediaPipe drawing utilities if available
-                if (window.drawConnectors && window.drawLandmarks) {
-                    // IMPORTANT FIX: Create a consistent transformation for BOTH the video and landmarks
-                    ctx.save();
-                    ctx.scale(-1, 1);
-                    ctx.translate(-canvas.width, 0);
-                    
-                    // Draw connections between landmarks (lines)
+                // FIXED: Apply consistent mirroring for both video and landmarks
+                ctx.save();
+                ctx.scale(-1, 1);
+                ctx.translate(-canvas.width, 0);
+                
+                // Draw connections between landmarks (lines)
+                if (window.drawConnectors && window.HAND_CONNECTIONS) {
                     window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, 
                         {color: '#00FF00', lineWidth: 2});
-                    
-                    // Draw landmarks (points)
+                }
+                
+                // Draw landmarks (points)
+                if (window.drawLandmarks) {
                     window.drawLandmarks(ctx, landmarks, 
                         {color: '#FF0000', lineWidth: 1, radius: 3});
-                    
-                    ctx.restore();
                 } else {
-                    // Fall back to our own drawing function
-                    drawLandmarks(ctx, landmarks, {color: '#00FF00', fillColor: '#FF0000'});
+                    // Fallback to manual drawing if MediaPipe drawing utils aren't available
+                    for (let landmark of landmarks) {
+                        ctx.fillStyle = '#FF0000';
+                        ctx.beginPath();
+                        ctx.arc(
+                            landmark.x * canvas.width,
+                            landmark.y * canvas.height,
+                            3, 0, 2 * Math.PI
+                        );
+                        ctx.fill();
+                    }
                 }
+                
+                ctx.restore();
 
                 // Gesture recognition rules
                 const gesture = detectGesture(landmarks);
@@ -381,49 +391,6 @@
             } else {
                 wordOutput.textContent = 'None';
             }
-        }
-
-        // Fixed drawLandmarks function for mobile compatibility
-        function drawLandmarks(ctx, landmarks, style) {
-            ctx.save();
-            ctx.scale(-1, 1);
-            ctx.translate(-canvas.width, 0);
-            
-            // First draw all connections (green lines)
-            if (window.HAND_CONNECTIONS) {
-                ctx.strokeStyle = style.color;
-                ctx.lineWidth = 2;
-                
-                for (const connection of window.HAND_CONNECTIONS) {
-                    const [index1, index2] = connection;
-                    if (landmarks[index1] && landmarks[index2]) {
-                        ctx.beginPath();
-                        ctx.moveTo(
-                            landmarks[index1].x * canvas.width,
-                            landmarks[index1].y * canvas.height
-                        );
-                        ctx.lineTo(
-                            landmarks[index2].x * canvas.width,
-                            landmarks[index2].y * canvas.height
-                        );
-                        ctx.stroke();
-                    }
-                }
-            }
-            
-            // Then draw all landmarks (red dots)
-            ctx.fillStyle = style.fillColor;
-            for (let landmark of landmarks) {
-                ctx.beginPath();
-                ctx.arc(
-                    landmark.x * canvas.width,
-                    landmark.y * canvas.height,
-                    3, 0, 2 * Math.PI
-                );
-                ctx.fill();
-            }
-            
-            ctx.restore();
         }
 
         // Detect gesture based on landmarks - improved for mobile detection
