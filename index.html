@@ -860,3 +860,148 @@
         startTTS.addEventListener('click', () => {
             const text = ttsInput.value.trim();
             if (text) {
+                // Try ResponsiveVoice first
+                if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+                    try {
+                        responsiveVoice.speak(text, "US English Female", {
+                            onstart: () => {
+                                updateTTSStatus(true);
+                                isTTSActive = true;
+                                startTTS.disabled = true;
+                                stopTTS.disabled = false;
+                            },
+                            onend: () => {
+                                updateTTSStatus(false);
+                                isTTSActive = false;
+                                startTTS.disabled = false;
+                                stopTTS.disabled = true;
+                            }
+                        });
+                    } catch (e) {
+                        console.error("ResponsiveVoice error:", e);
+                        useBrowserTTS(text);
+                    }
+                } else {
+                    // Fallback to browser's native speech synthesis
+                    useBrowserTTS(text);
+                }
+            } else {
+                showError('Please enter text to speak.', 'error');
+            }
+        });
+
+        // Browser's native TTS function
+        function useBrowserTTS(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.onstart = () => {
+                    updateTTSStatus(true);
+                    isTTSActive = true;
+                    startTTS.disabled = true;
+                    stopTTS.disabled = false;
+                };
+                utterance.onend = () => {
+                    updateTTSStatus(false);
+                    isTTSActive = false;
+                    startTTS.disabled = false;
+                    stopTTS.disabled = true;
+                };
+                speechSynthesis.speak(utterance);
+            } else {
+                showError('Text-to-speech not supported in this browser.', 'error');
+                startTTS.disabled = false;
+                stopTTS.disabled = true;
+            }
+        }
+
+        stopTTS.addEventListener('click', () => {
+            if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+                try {
+                    responsiveVoice.cancel();
+                } catch (e) {
+                    console.error("ResponsiveVoice error on cancel:", e);
+                }
+            }
+            
+            // Also cancel browser's native speech synthesis
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+            
+            updateTTSStatus(false);
+            isTTSActive = false;
+            startTTS.disabled = false;
+            stopTTS.disabled = true;
+        });
+
+        // Clear All
+        clearAll.addEventListener('click', () => {
+            wordOutput.textContent = 'None';
+            spokenText.textContent = 'None';
+            ttsInput.value = '';
+            updateTTSStatus(false);
+            errorDiv.className = '';
+            
+            if (isTTSActive) {
+                if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
+                    try {
+                        responsiveVoice.cancel();
+                    } catch (e) {
+                        console.error("ResponsiveVoice error on cancel:", e);
+                    }
+                }
+                
+                // Also cancel browser's native speech synthesis
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                }
+                
+                startTTS.disabled = false;
+                stopTTS.disabled = true;
+                isTTSActive = false;
+            }
+            
+            if (recognition && !stopSpeech.disabled) {
+                recognition.stop();
+                startSpeech.disabled = false;
+                stopSpeech.disabled = true;
+            }
+            
+            if (isPredicting) {
+                isPredicting = false;
+                startSign.disabled = false;
+                stopSign.disabled = true;
+                if (camera) camera.stop();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        // Initialize application on document load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if MediaPipe modules are available
+            if (!window.Hands) {
+                showError('MediaPipe Hands module not loaded. Sign language detection will not work.', 'error');
+            }
+            
+            if (!window.Camera) {
+                showError('MediaPipe Camera module not loaded.', 'error');
+            }
+            
+            // Display browser info for debugging
+            const userAgent = navigator.userAgent;
+            console.log("User Agent:", userAgent);
+            console.log("Is Mobile:", isMobile);
+            
+            // Check if running on HTTPS
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                showError('Warning: Camera access requires HTTPS for security. This site may not work properly.', 'error');
+            }
+        });
+
+        // Main function
+        function main() {
+            console.log("Talksy application initialized. Click 'Start Sign' to begin sign language detection.");
+        }
+
+        main();
