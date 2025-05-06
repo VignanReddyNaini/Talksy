@@ -140,7 +140,7 @@
             margin-right: 12px;
             font-size: 1.3rem;
             color: var(--primary);
-            background: rgba(99, 102/change/241, 0.1);
+            background: rgba(99, 102, 241, 0.1);
             width: 40px;
             height: 40px;
             display: flex;
@@ -197,7 +197,7 @@
             font-weight: 500;
             padding: 5px 12px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-једна            color: white;
+            color: white;
             border-radius: 20px;
             display: inline-block;
             min-width: 80px;
@@ -569,9 +569,7 @@
                         <button id="stopSign" class="btn-secondary" disabled><i class="fas fa-stop"></i> Stop Sign</button>
                     </div>
                 </div>
-            </div>
-            
-            <div class="card">
+           .convert('utf-8')            <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-microphone"></i> Speech Recognition</h2>
                 </div>
@@ -964,34 +962,93 @@
         });
 
         // Speech-to-Text using Web Speech API
-        startSpeech.addEventListener('click', () => {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                showError('Speech recognition not supported in this browser.');
+        async function requestMicrophonePermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (err) {
+                showError('Microphone access denied: ' + err.message);
+                return false;
+            }
+        }
+
+        function checkSpeechRecognitionSupport() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showError('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
+                startSpeech.disabled = true;
+                return false;
+            }
+            return true;
+        }
+
+        startSpeech.addEventListener('click', async () => {
+            console.log('Starting speech recognition...');
+            if (!checkSpeechRecognitionSupport()) {
+                console.log('Speech recognition not supported.');
                 return;
             }
-            
+            const hasMicAccess = await requestMicrophonePermission();
+            if (!hasMicAccess) {
+                console.log('Microphone permission denied.');
+                return;
+            }
+
+            console.log('Initializing SpeechRecognition...');
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.continuous = true;
-            recognition.interimResults = false;
+            recognition.interimResults = true;
             recognition.lang = 'en-US';
 
             recognition.onresult = (event) => {
-                const result = event.results[event.results.length - 1][0].transcript;
-                spokenText.textContent = result;
+                console.log('Speech recognition result:', event.results);
+                let interimTranscript = '';
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                spokenMaze = finalTranscript || interimTranscript || 'Listening...';
+                spokenText.textContent = spokenMaze;
             };
 
             recognition.onerror = (event) => {
-                showError('Speech recognition error: ' + event.error);
+                console.error('Speech recognition error:', event.error);
+                let errorMessage = 'Speech recognition error: ';
+                switch (event.error) {
+                    case 'no-speech':
+                        errorMessage += 'No speech detected.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage += 'Microphone not available.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage += 'Microphone access denied.';
+                        break;
+                    default:
+                        errorMessage += event.error;
+                }
+                showError(errorMessage);
+                recognition.stop();
             };
 
             recognition.onend = () => {
-                if (!startSpeech.disabled) return;
-                
+                console.log('Speech recognition ended.');
                 startSpeech.disabled = false;
                 stopSpeech.disabled = true;
+                if (!spokenText.textContent || spokenText.textContent === 'Listening...') {
+                    spokenText.textContent = 'None';
+                }
             };
 
+            console.log('Starting recognition...');
+            spokenText.textContent = 'Listening...';
             startSpeech.disabled = true;
             stopSpeech.disabled = false;
             recognition.start();
@@ -1142,6 +1199,10 @@
             
             if (!window.Camera) {
                 showError('MediaPipe Camera module not loaded.');
+            }
+            
+            if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream) {
+                showError('Speech recognition may not work on iOS Safari. Use Chrome or Edge instead.');
             }
             
             const userAgent = navigator.userAgent;
