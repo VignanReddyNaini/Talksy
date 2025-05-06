@@ -569,7 +569,8 @@
                         <button id="stopSign" class="btn-secondary" disabled><i class="fas fa-stop"></i> Stop Sign</button>
                     </div>
                 </div>
-           .convert('utf-8')            <div class="card">
+            </div>
+            <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-microphone"></i> Speech Recognition</h2>
                 </div>
@@ -658,30 +659,6 @@
         let hasPermission = false;
         let isMobile = window.innerWidth < 768;
 
-        // Show error message function
-        function showError(message) {
-            errorText.textContent = message;
-            errorDiv.classList.add('visible');
-            setTimeout(() => {
-                errorDiv.classList.remove('visible');
-            }, 5000);
-        }
-
-        // Success message function
-        function showSuccess(message) {
-            errorText.textContent = message;
-            errorDiv.style.color = '#10b981';
-            errorDiv.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
-            errorDiv.style.borderLeft = '4px solid #10b981';
-            errorDiv.classList.add('visible');
-            setTimeout(() => {
-                errorDiv.classList.remove('visible');
-                errorDiv.style.color = 'var(--danger)';
-                errorDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                errorDiv.style.borderLeft = '4px solid var(--danger)';
-            }, 3000);
-        }
-
         // Set canvas dimensions based on device
         function setCanvasDimensions() {
             isMobile = window.innerWidth < 768;
@@ -690,8 +667,8 @@
                 canvas.width = canvas.offsetWidth;
                 canvas.height = canvas.offsetWidth * 0.75;
             } else {
-                canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetWidth * 0.75;
+                canvas.width = 320;
+                canvas.height = 240;
             }
             
             if (ctx) {
@@ -716,10 +693,14 @@
                 });
                 hasPermission = true;
                 stream.getTracks().forEach(track => track.stop());
-                showSuccess('Camera permission granted. Click "Start Sign" to begin.');
+                errorText.textContent = 'Camera permission granted. Click "Start Sign" to begin.';
+                errorDiv.style.color = 'green';
+                errorDiv.classList.add('visible');
+                setTimeout(() => errorDiv.classList.remove('visible'), 3000);
             } catch (err) {
-                showError('Camera permission denied: ' + err.message);
-                console.error('Permission error:', err);
+                errorText.textContent = 'Camera permission denied: ' + err.message;
+                errorDiv.classList.add('visible');
+                setTimeout(() => errorDiv.classList.remove('visible'), 5000);
             }
         });
 
@@ -770,23 +751,27 @@
                     video.onloadedmetadata = () => {
                         video.play()
                             .then(() => {
-                                showSuccess('Camera initialized successfully!');
+                                errorText.textContent = 'Camera initialized successfully!';
+                                errorDiv.style.color = 'green';
+                                errorDiv.classList.add('visible');
+                                setTimeout(() => errorDiv.classList.remove('visible'), 3000);
                                 initializeHandTracking();
                                 resolve(video);
                             })
                             .catch(err => {
-                                showError('Error playing video: ' + err.message);
+                                errorText.textContent = 'Error playing video: ' + err.message;
+                                errorDiv.classList.add('visible');
                                 throw err;
                             });
                     };
                 });
             } catch (err) {
                 if (err.name === 'NotReadableError') {
-                    showError('Camera error: The camera may be in use by another application. Please close other camera apps and try again.');
+                    errorText.textContent = 'Camera error: The camera may be in use by another application. Please close other camera apps and try again.';
                 } else {
-                    showError('Camera setup error: ' + err.message);
+                    errorText.textContent = 'Camera setup error: ' + err.message;
                 }
-                console.error('Camera setup error:', err);
+                errorDiv.classList.add('visible');
                 throw err;
             }
         }
@@ -828,8 +813,8 @@
                 });
                 
             } catch (err) {
-                showError('Hand tracking initialization error: ' + err.message);
-                console.error('Hand tracking setup error:', err);
+                errorText.textContent = 'Hand tracking initialization error: ' + err.message;
+                errorDiv.classList.add('visible');
                 throw err;
             }
         }
@@ -929,6 +914,7 @@
                 startSign.disabled = true;
                 stopSign.disabled = false;
                 errorText.textContent = 'Starting camera...';
+                errorDiv.classList.add('visible');
                 
                 if (!camera || !video) {
                     await setupCamera();
@@ -943,7 +929,8 @@
                     isPredicting = true;
                 }
             } catch (err) {
-                showError('Error starting camera: ' + err.message);
+                errorText.textContent = 'Error starting camera: ' + err.message;
+                errorDiv.classList.add('visible');
                 startSign.disabled = false;
                 stopSign.disabled = true;
             }
@@ -962,93 +949,35 @@
         });
 
         // Speech-to-Text using Web Speech API
-        async function requestMicrophonePermission() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                stream.getTracks().forEach(track => track.stop());
-                return true;
-            } catch (err) {
-                showError('Microphone access denied: ' + err.message);
-                return false;
-            }
-        }
-
-        function checkSpeechRecognitionSupport() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                showError('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
-                startSpeech.disabled = true;
-                return false;
-            }
-            return true;
-        }
-
-        startSpeech.addEventListener('click', async () => {
-            console.log('Starting speech recognition...');
-            if (!checkSpeechRecognitionSupport()) {
-                console.log('Speech recognition not supported.');
+        startSpeech.addEventListener('click', () => {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                errorText.textContent = 'Speech recognition not supported in this browser.';
+                errorDiv.classList.add('visible');
                 return;
             }
-            const hasMicAccess = await requestMicrophonePermission();
-            if (!hasMicAccess) {
-                console.log('Microphone permission denied.');
-                return;
-            }
-
-            console.log('Initializing SpeechRecognition...');
+            
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.continuous = true;
-            recognition.interimResults = true;
+            recognition.interimResults = false;
             recognition.lang = 'en-US';
 
             recognition.onresult = (event) => {
-                console.log('Speech recognition result:', event.results);
-                let interimTranscript = '';
-                let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
-                    } else {
-                        interimTranscript += transcript;
-                    }
-                }
-                spokenMaze = finalTranscript || interimTranscript || 'Listening...';
-                spokenText.textContent = spokenMaze;
+                const result = event.results[event.results.length - 1][0].transcript;
+                spokenText.textContent = result;
             };
 
             recognition.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                let errorMessage = 'Speech recognition error: ';
-                switch (event.error) {
-                    case 'no-speech':
-                        errorMessage += 'No speech detected.';
-                        break;
-                    case 'audio-capture':
-                        errorMessage += 'Microphone not available.';
-                        break;
-                    case 'not-allowed':
-                        errorMessage += 'Microphone access denied.';
-                        break;
-                    default:
-                        errorMessage += event.error;
-                }
-                showError(errorMessage);
-                recognition.stop();
+                errorText.textContent = 'Speech recognition error: ' + event.error;
+                errorDiv.classList.add('visible');
             };
 
             recognition.onend = () => {
-                console.log('Speech recognition ended.');
+                if (!startSpeech.disabled) return;
                 startSpeech.disabled = false;
                 stopSpeech.disabled = true;
-                if (!spokenText.textContent || spokenText.textContent === 'Listening...') {
-                    spokenText.textContent = 'None';
-                }
             };
 
-            console.log('Starting recognition...');
-            spokenText.textContent = 'Listening...';
             startSpeech.disabled = true;
             stopSpeech.disabled = false;
             recognition.start();
@@ -1094,7 +1023,8 @@
                     useBrowserTTS(text);
                 }
             } else {
-                showError('Please enter text to speak.');
+                errorText.textContent = 'Please enter text to speak.';
+                errorDiv.classList.add('visible');
             }
         });
 
@@ -1121,7 +1051,8 @@
                 };
                 speechSynthesis.speak(utterance);
             } else {
-                showError('Text-to-speech not supported in this browser.');
+                errorText.textContent = 'Text-to-speech not supported in this browser.';
+                errorDiv.classList.add('visible');
                 startTTS.disabled = false;
                 stopTTS.disabled = true;
             }
@@ -1194,23 +1125,18 @@
         // Initialize application on document load
         document.addEventListener('DOMContentLoaded', function() {
             if (!window.Hands) {
-                showError('MediaPipe Hands module not loaded. Sign language detection will not work.');
+                errorText.textContent = 'MediaPipe Hands module not loaded. Sign language detection will not work.';
+                errorDiv.classList.add('visible');
             }
             
             if (!window.Camera) {
-                showError('MediaPipe Camera module not loaded.');
+                errorText.textContent += ' MediaPipe Camera module not loaded.';
+                errorDiv.classList.add('visible');
             }
-            
-            if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream) {
-                showError('Speech recognition may not work on iOS Safari. Use Chrome or Edge instead.');
-            }
-            
-            const userAgent = navigator.userAgent;
-            console.log("User Agent:", userAgent);
-            console.log("Is Mobile:", isMobile);
             
             if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                showError('Warning: Camera access requires HTTPS for security. This site may not work properly.');
+                errorText.textContent = 'Warning: Camera access requires HTTPS for security. This site may not work properly.';
+                errorDiv.classList.add('visible');
             }
         });
 
