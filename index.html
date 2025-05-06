@@ -4,134 +4,620 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Talksy: Bridging Communication</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #ec4899;
+            --secondary-light: #f472b6;
+            --accent: #14b8a6;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+            --border-radius: 16px;
+            --box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #d9e6ff 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 10px;
         }
+        
+        .app-container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            position: relative;
+        }
+        
+        header::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+        }
+        
+        h1 {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+            font-size: 3rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .tagline {
+            color: var(--gray);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-weight: 300;
+        }
+        
         .container {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 30px;
             max-width: 100%;
             width: 100%;
         }
-        .video-section, .controls-section {
-            background: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: calc(100% - 30px);
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            position: relative;
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .card-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary), var(--primary-light));
+        }
+        
+        .card-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            color: var(--primary-dark);
+        }
+        
+        .card-header i {
+            margin-right: 12px;
+            font-size: 1.3rem;
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        
+        .card-body {
+            padding: 25px;
+        }
+        
         #canvas {
-            border: 2px solid #333;
-            border-radius: 8px;
+            border: 2px solid var(--primary);
+            border-radius: var(--border-radius);
             max-width: 100%;
             width: 100%;
             height: auto;
             aspect-ratio: 4/3;
+            display: block;
+            margin: 0 auto;
+            background-color: #f8f9fa;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
         }
-        .output, .button {
-            margin: 10px 0;
+        
+        .output {
+            background-color: var(--light);
+            padding: 15px 18px;
+            border-radius: var(--border-radius);
+            margin: 18px 0;
+            font-size: 1rem;
+            border: 1px solid var(--light-gray);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .button button {
-            padding: 12px 16px;
-            margin-right: 10px;
-            margin-bottom: 5px;
+        
+        .output-label {
+            font-weight: 600;
+            color: var(--dark);
+            margin-right: 5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .output-label i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+        
+        .output-value {
+            font-weight: 500;
+            padding: 5px 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            border-radius: 20px;
+            display: inline-block;
+            min-width: 80px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(99, 102, 241, 0.3);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 14px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 30px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 130px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
         }
-        .button button:disabled {
-            background: #ccc;
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                            rgba(255, 255, 255, 0) 0%, 
+                            rgba(255, 255, 255, 0.3) 50%, 
+                            rgba(255, 255, 255, 0) 100%);
+            transition: all 0.6s ease;
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        button i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        
+        button:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
+            box-shadow: none;
         }
-        #startSign { background-color: #ff4d4d; color: white; }
-        #stopSign { background-color: #808080; color: white; }
-        #clearAll { background-color: #808080; color: white; }
-        #startSpeech { background-color: #4CAF50; color: white; }
-        #stopSpeech { background-color: #808080; color: white; }
-        #startTTS { background-color: #ff4d4d; color: white; }
-        #stopTTS { background-color: #808080; color: white; }
-        h1 { color: #1E90FF; text-align: center; font-size: 24px; }
-        #error { color: red; margin: 10px 0; }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--gray) 0%, #475569 100%);
+            color: white;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--secondary) 0%, #db2777 100%);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+            color: white;
+        }
+        
+        #error {
+            color: var(--danger);
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger);
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        #error.visible {
+            display: flex;
+            align-items: center;
+        }
+        
+        #error i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+        
         #permissionRequest {
             display: none;
-            background-color: #ffeb3b;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 8px;
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: var(--border-radius);
             text-align: center;
-        }
-        #permissionButton {
-            background-color: #4CAF50;
             color: white;
-            padding: 10px 15px;
+            box-shadow: var(--box-shadow);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        #permissionButton {
+            background: white;
+            color: var(--warning);
+            padding: 12px 25px;
+            margin-top: 15px;
             border: none;
-            border-radius: 4px;
+            border-radius: 25px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        #permissionButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        .input-group {
+            margin: 18px 0;
+            position: relative;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 1rem;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+            outline: none;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .input-group label {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            color: var(--gray);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .input-group input:focus + label,
+        .input-group input:not(:placeholder-shown) + label {
+            top: 0;
+            left: 15px;
+            font-size: 0.75rem;
+            padding: 0 5px;
+            background-color: white;
+            color: var(--primary);
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--light-gray);
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .status-active {
+            background-color: var(--success);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        
+        .status-inactive {
+            background-color: var(--gray);
+        }
+        
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            color: var(--gray);
+            font-size: 1rem;
+            padding: 20px 0;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(5px);
+            width: 100%;
+        }
+        
+        footer .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
             margin-top: 10px;
         }
         
-        /* Media Queries for better mobile layout */
+        footer .social-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            transition: all 0.3s ease;
+        }
+        
+        footer .social-icon:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .feature-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .feature-badge i {
+            margin-right: 5px;
+        }
+        
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .float-animation {
+            animation: float 4s ease-in-out infinite;
+        }
+        
         @media (min-width: 768px) {
             .container {
                 flex-direction: row;
                 flex-wrap: wrap;
-                justify-content: center;
             }
-            .video-section, .controls-section {
-                width: 320px;
+            
+            .card {
+                flex: 1;
+                min-width: 320px;
             }
+            
             #canvas {
-                width: 320px;
-                height: 240px;
-                aspect-ratio: auto;
+                width: 100%;
+                height: auto;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .card-header h2 {
+                font-size: 1.2rem;
+            }
+            
+            button {
+                padding: 12px 16px;
+                font-size: 0.9rem;
+                min-width: auto;
+                flex: 1;
+            }
+            
+            .card-header i {
+                width: 32px;
+                height: 32px;
+                font-size: 1.1rem;
             }
         }
     </style>
 </head>
 <body>
-    <div id="permissionRequest">
-        <p>This app needs camera access to detect sign language gestures.</p>
-        <button id="permissionButton">Grant Camera Access</button>
-    </div>
-    
-    <div class="container">
-        <div class="video-section">
-            <h1>Talksy: Bridging Communication</h1>
-            <canvas id="canvas"></canvas>
-            <div class="output">Word: <span id="wordOutput">None</span></div>
-            <div class="button">
-                <button id="startSign">Start Sign</button>
-                <button id="stopSign" disabled>Stop Sign</button>
+    <div class="app-container">
+        <header>
+            <h1><i class="fas fa-hands float-animation"></i> Talksy</h1>
+            <p class="tagline">Breaking Communication Barriers Through Technology</p>
+            <div class="features">
+                <span class="feature-badge"><i class="fas fa-sign-language"></i> Sign Detection</span>
+                <span class="feature-badge"><i class="fas fa-microphone"></i> Speech Recognition</span>
+                <span class="feature-badge"><i class="fas fa-volume-up"></i> Text to Speech</span>
             </div>
-            <div id="error"></div>
+        </header>
+        
+        <div id="permissionRequest">
+            <p><i class="fas fa-camera"></i> Talksy needs camera access to detect sign language gestures.</p>
+            <button id="permissionButton">Grant Camera Access</button>
         </div>
-        <div class="controls-section">
-            <div class="output">Speech-to-Text</div>
-            <div class="output">Spoken Text: <span id="spokenText">None</span></div>
-            <div class="button">
-                <button id="startSpeech">Start Speech</button>
-                <button id="stopSpeech" disabled>Stop Speech</button>
+        
+        <div id="error"><i class="fas fa-exclamation-circle"></i><span id="errorText"></span></div>
+        
+        <div class="container">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-sign-language"></i> Sign Language Detection</h2>
+                </div>
+                <div class="card-body">
+                    <canvas id="canvas"></canvas>
+                    <div class="output">
+                        <span class="output-label"><i class="fas fa-hand-point-up"></i> Detected Sign:</span>
+                        <span class="output-value" id="wordOutput">None</span>
+                    </div>
+                    <div class="button-group">
+                        <button id="startSign" class="btn-primary"><i class="fas fa-play"></i> Start Sign</button>
+                        <button id="stopSign" class="btn-secondary" disabled><i class="fas fa-stop"></i> Stop Sign</button>
+                    </div>
+                </div>
             </div>
-            <div class="output">Text-to-Speech</div>
-            <input type="text" id="ttsInput" placeholder="Type here to speak" style="width: 100%; padding: 10px; font-size: 16px;">
-            <div class="output">TTS Status: <span id="ttsStatus">Inactive</span></div>
-            <div class="button">
-                <button id="startTTS">Start TTS</button>
-                <button id="stopTTS" disabled>Stop TTS</button>
-                <button id="clearAll">Clear All</button>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-microphone"></i> Speech Recognition</h2>
+                </div>
+                <div class="card-body">
+                    <div class="output">
+                        <span class="output-label"><i class="fas fa-comment-alt"></i> Spoken Text:</span>
+                        <span class="output-value" id="spokenText">None</span>
+                    </div>
+                    <div class="button-group">
+                        <button id="startSpeech" class="btn-success"><i class="fas fa-microphone"></i> Start Speech</button>
+                        <button id="stopSpeech" class="btn-secondary" disabled><i class="fas fa-microphone-slash"></i> Stop Speech</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-volume-up"></i> Text To Speech</h2>
+                    <div class="status-indicator">
+                        <div class="status-dot status-inactive" id="statusDot"></div>
+                        <span id="ttsStatus">Inactive</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" id="ttsInput" placeholder=" ">
+                        <label for="ttsInput">Type here to speak...</label>
+                    </div>
+                    <div class="button-group">
+                        <button id="startTTS" class="btn-danger"><i class="fas fa-play-circle"></i> Start TTS</button>
+                        <button id="stopTTS" class="btn-secondary" disabled><i class="fas fa-stop-circle"></i> Stop TTS</button>
+                        <button id="clearAll" class="btn-warning"><i class="fas fa-trash"></i> Clear All</button>
+                    </div>
+                </div>
             </div>
         </div>
+        
+        <footer>
+            <p>Talksy © 2025 | Communication for Everyone</p>
+            <div class="social-icons">
+                <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="social-icon"><i class="fab fa-github"></i></a>
+            </div>
+        </footer>
     </div>
 
     <!-- Load TensorFlow.js -->
@@ -150,6 +636,7 @@
         const ctx = canvas.getContext('2d');
         const wordOutput = document.getElementById('wordOutput');
         const errorDiv = document.getElementById('error');
+        const errorText = document.getElementById('errorText');
         const startSign = document.getElementById('startSign');
         const stopSign = document.getElementById('stopSign');
         const startSpeech = document.getElementById('startSpeech');
@@ -159,6 +646,7 @@
         const startTTS = document.getElementById('startTTS');
         const stopTTS = document.getElementById('stopTTS');
         const ttsStatus = document.getElementById('ttsStatus');
+        const statusDot = document.getElementById('statusDot');
         const clearAll = document.getElementById('clearAll');
         const permissionRequest = document.getElementById('permissionRequest');
         const permissionButton = document.getElementById('permissionButton');
@@ -172,31 +660,49 @@
         let hasPermission = false;
         let isMobile = window.innerWidth < 768;
 
+        // Show error message function
+        function showError(message) {
+            errorText.textContent = message;
+            errorDiv.classList.add('visible');
+            setTimeout(() => {
+                errorDiv.classList.remove('visible');
+            }, 5000);
+        }
+
+        // Success message function
+        function showSuccess(message) {
+            errorText.textContent = message;
+            errorDiv.style.color = '#10b981';
+            errorDiv.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+            errorDiv.style.borderLeft = '4px solid #10b981';
+            errorDiv.classList.add('visible');
+            setTimeout(() => {
+                errorDiv.classList.remove('visible');
+                errorDiv.style.color = 'var(--danger)';
+                errorDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                errorDiv.style.borderLeft = '4px solid var(--danger)';
+            }, 3000);
+        }
+
         // Set canvas dimensions based on device
         function setCanvasDimensions() {
             isMobile = window.innerWidth < 768;
             
             if (isMobile) {
-                // Mobile layout
                 canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetWidth * 0.75; // 4:3 aspect ratio
+                canvas.height = canvas.offsetWidth * 0.75;
             } else {
-                // Desktop layout
-                canvas.width = 320;
-                canvas.height = 240;
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetWidth * 0.75;
             }
             
-            // If the context exists, restore the mirroring for video feed
             if (ctx) {
-                // Clear the canvas after resize
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         }
 
         // Handle window resize
         window.addEventListener('resize', setCanvasDimensions);
-        
-        // Initialize canvas dimensions on load
         setCanvasDimensions();
 
         // Handle permissions explicitly
@@ -211,11 +717,10 @@
                     } 
                 });
                 hasPermission = true;
-                stream.getTracks().forEach(track => track.stop()); // Stop the temporary stream
-                errorDiv.textContent = 'Camera permission granted. Click "Start Sign" to begin.';
-                errorDiv.style.color = 'green';
+                stream.getTracks().forEach(track => track.stop());
+                showSuccess('Camera permission granted. Click "Start Sign" to begin.');
             } catch (err) {
-                errorDiv.textContent = 'Camera permission denied: ' + err.message;
+                showError('Camera permission denied: ' + err.message);
                 console.error('Permission error:', err);
             }
         });
@@ -223,10 +728,10 @@
         // Set up webcam and draw to canvas
         async function setupCamera() {
             try {
-                errorDiv.textContent = 'Initializing camera...';
+                errorText.textContent = 'Initializing camera...';
+                errorDiv.classList.add('visible');
                 
                 if (!hasPermission) {
-                    // First check if permission is granted
                     try {
                         const stream = await navigator.mediaDevices.getUserMedia({ 
                             video: { 
@@ -236,7 +741,7 @@
                             } 
                         });
                         hasPermission = true;
-                        stream.getTracks().forEach(track => track.stop()); // Stop the temporary stream
+                        stream.getTracks().forEach(track => track.stop());
                     } catch (err) {
                         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                             permissionRequest.style.display = 'block';
@@ -247,13 +752,11 @@
                     }
                 }
                 
-                // Create video element
                 video = document.createElement('video');
                 video.width = canvas.width;
                 video.height = canvas.height;
                 video.autoplay = true;
                 
-                // Try to get stream with specific constraints for mobile
                 const constraints = {
                     video: {
                         facingMode: 'user',
@@ -265,29 +768,25 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 
-                // Wait for video to be ready
                 return new Promise((resolve) => {
                     video.onloadedmetadata = () => {
                         video.play()
                             .then(() => {
-                                errorDiv.textContent = 'Camera initialized successfully!';
-                                errorDiv.style.color = 'green';
-                                
-                                // Initialize MediaPipe Hands
+                                showSuccess('Camera initialized successfully!');
                                 initializeHandTracking();
                                 resolve(video);
                             })
                             .catch(err => {
-                                errorDiv.textContent = 'Error playing video: ' + err.message;
+                                showError('Error playing video: ' + err.message);
                                 throw err;
                             });
                     };
                 });
             } catch (err) {
                 if (err.name === 'NotReadableError') {
-                    errorDiv.textContent = 'Camera error: The camera may be in use by another application. Please close other camera apps and try again.';
+                    showError('Camera error: The camera may be in use by another application. Please close other camera apps and try again.');
                 } else {
-                    errorDiv.textContent = 'Camera setup error: ' + err.message;
+                    showError('Camera setup error: ' + err.message);
                 }
                 console.error('Camera setup error:', err);
                 throw err;
@@ -297,27 +796,25 @@
         // Initialize hand tracking with MediaPipe
         function initializeHandTracking() {
             try {
-                // Initialize MediaPipe Hands module
                 if (!window.Hands) {
                     throw new Error("MediaPipe Hands module not loaded correctly");
                 }
                 
                 hands = new window.Hands({
                     locateFile: (file) => {
-                        return https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file};
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}`;
                     }
                 });
                 
                 hands.setOptions({
                     maxNumHands: 1,
-                    minDetectionConfidence: 0.6, // Lower threshold for better detection on mobile
+                    minDetectionConfidence: 0.6,
                     minTrackingConfidence: 0.6,
                     modelComplexity: 1
                 });
                 
                 hands.onResults(onResults);
 
-                // Initialize camera utilities
                 if (!window.Camera) {
                     throw new Error("MediaPipe Camera module not loaded correctly");
                 }
@@ -333,20 +830,18 @@
                 });
                 
             } catch (err) {
-                errorDiv.textContent = 'Hand tracking initialization error: ' + err.message;
+                showError('Hand tracking initialization error: ' + err.message);
                 console.error('Hand tracking setup error:', err);
                 throw err;
             }
         }
 
-        // Process hand landmarks - FIXED VERSION FOR CORRECT ALIGNMENT
+        // Process hand landmarks
         function onResults(results) {
-            // Clear the canvas first
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw the mirrored video feed
             ctx.save();
-            ctx.scale(-1, 1); // Mirror horizontally
+            ctx.scale(-1, 1);
             ctx.translate(-canvas.width, 0);
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             ctx.restore();
@@ -354,23 +849,19 @@
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const landmarks = results.multiHandLandmarks[0];
                 
-                // FIXED: Apply consistent mirroring for both video and landmarks
                 ctx.save();
                 ctx.scale(-1, 1);
                 ctx.translate(-canvas.width, 0);
                 
-                // Draw connections between landmarks (lines)
                 if (window.drawConnectors && window.HAND_CONNECTIONS) {
-                    window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, 
+                    window.drawConnectors(ctx, landmarks metoda, window.HAND_CONNECTIONS, 
                         {color: '#00FF00', lineWidth: 2});
                 }
                 
-                // Draw landmarks (points)
                 if (window.drawLandmarks) {
                     window.drawLandmarks(ctx, landmarks, 
                         {color: '#FF0000', lineWidth: 1, radius: 3});
                 } else {
-                    // Fallback to manual drawing if MediaPipe drawing utils aren't available
                     for (let landmark of landmarks) {
                         ctx.fillStyle = '#FF0000';
                         ctx.beginPath();
@@ -385,17 +876,15 @@
                 
                 ctx.restore();
 
-                // Gesture recognition rules
                 const gesture = detectGesture(landmarks);
-                wordOutput.textContent = ${gesture};
+                wordOutput.textContent = gesture;
             } else {
                 wordOutput.textContent = 'None';
             }
         }
 
-        // Detect gesture based on landmarks - improved for mobile detection
+        // Detect gesture based on landmarks
         function detectGesture(landmarks) {
-            // Calculate finger states with improved thresholds for mobile
             const fingerTipPositions = [
                 { name: 'thumb', tip: 4, pip: 3, threshold: 0.09 },
                 { name: 'index', tip: 8, pip: 6, threshold: 0.06 },
@@ -406,36 +895,32 @@
             
             const fingers = {};
             
-            // Determine if fingers are extended
             fingerTipPositions.forEach(finger => {
                 if (finger.name === 'thumb') {
-                    // Special case for thumb - check both y position and x distance
                     fingers.thumb = (landmarks[finger.tip].y < landmarks[finger.pip].y) && 
                                     (Math.abs(landmarks[finger.tip].x - landmarks[finger.pip].x) > finger.threshold);
                 } else {
-                    // For other fingers, simply check if tip is above pip (knuckle)
                     fingers[finger.name] = landmarks[finger.tip].y < landmarks[finger.pip].y;
                 }
             });
 
-            // Define gesture rules with clearer logic for mobile detection
             if (fingers.thumb && !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky) {
-                return 'Thank You'; // Thumb up, others curled
+                return 'Thank You';
             } else if (fingers.index && fingers.middle && !fingers.thumb && !fingers.ring && !fingers.pinky) {
-                return 'Bad'; // Index and middle up, others curled
+                return 'Bad';
             } else if (fingers.index && fingers.middle && fingers.ring && !fingers.thumb && !fingers.pinky) {
-                return 'Good'; // Index, middle, ring up, others curled
+                return 'Good';
             } else if (fingers.index && !fingers.thumb && !fingers.middle && !fingers.ring && !fingers.pinky) {
-                return 'No'; // Index up, others curled
+                return 'No';
             } else if (fingers.thumb && fingers.index && 
                       (Math.abs(landmarks[4].x - landmarks[8].x) < 0.1) &&
                       (landmarks[4].y > landmarks[8].y) && 
                       !fingers.middle && !fingers.ring && !fingers.pinky) {
-                return 'Hello'; // Thumb and index forming a circle
+                return 'Hello';
             } else if (!fingers.thumb && fingers.index && fingers.middle && fingers.ring && fingers.pinky) {
-                return 'Yes'; // Four fingers up with thumb closed
+                return 'Yes';
             } else if (fingers.thumb && fingers.index && fingers.middle && fingers.ring && fingers.pinky) {
-                return 'Open Hand'; // All fingers spread
+                return 'Open Hand';
             }
             return 'None';
         }
@@ -445,7 +930,7 @@
             try {
                 startSign.disabled = true;
                 stopSign.disabled = false;
-                errorDiv.textContent = 'Starting camera...';
+                errorText.textContent = 'Starting camera...';
                 
                 if (!camera || !video) {
                     await setupCamera();
@@ -456,12 +941,11 @@
                         throw new Error("Failed to initialize camera");
                     }
                 } else {
-                    // If camera already initialized, just start it
                     await camera.start();
                     isPredicting = true;
                 }
             } catch (err) {
-                errorDiv.textContent = 'Error starting camera: ' + err.message;
+                showError('Error starting camera: ' + err.message);
                 startSign.disabled = false;
                 stopSign.disabled = true;
             }
@@ -482,7 +966,7 @@
         // Speech-to-Text using Web Speech API
         startSpeech.addEventListener('click', () => {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                errorDiv.textContent = 'Speech recognition not supported in this browser.';
+                showError('Speech recognition not supported in this browser.');
                 return;
             }
             
@@ -498,11 +982,10 @@
             };
 
             recognition.onerror = (event) => {
-                errorDiv.textContent = 'Speech recognition error: ' + event.error;
+                showError('Speech recognition error: ' + event.error);
             };
 
             recognition.onend = () => {
-                // Only reset buttons if stop was not manually pressed
                 if (!startSpeech.disabled) return;
                 
                 startSpeech.disabled = false;
@@ -526,18 +1009,21 @@
         startTTS.addEventListener('click', () => {
             const text = ttsInput.value.trim();
             if (text) {
-                // Try ResponsiveVoice first
                 if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
                     try {
                         responsiveVoice.speak(text, "US English Female", {
                             onstart: () => {
                                 ttsStatus.textContent = 'Active';
+                                statusDot.classList.remove('status-inactive');
+                                statusDot.classList.add('status-active');
                                 isTTSActive = true;
                                 startTTS.disabled = true;
                                 stopTTS.disabled = false;
                             },
                             onend: () => {
                                 ttsStatus.textContent = 'Inactive';
+                                statusDot.classList.remove('status-active');
+                                statusDot.classList.add('status-inactive');
                                 isTTSActive = false;
                                 startTTS.disabled = false;
                                 stopTTS.disabled = true;
@@ -548,11 +1034,10 @@
                         useBrowserTTS(text);
                     }
                 } else {
-                    // Fallback to browser's native speech synthesis
                     useBrowserTTS(text);
                 }
             } else {
-                errorDiv.textContent = 'Please enter text to speak.';
+                showError('Please enter text to speak.');
             }
         });
 
@@ -563,19 +1048,23 @@
                 utterance.lang = 'en-US';
                 utterance.onstart = () => {
                     ttsStatus.textContent = 'Active';
+                    statusDot.classList.remove('status-inactive');
+                    statusDot.classList.add('status-active');
                     isTTSActive = true;
                     startTTS.disabled = true;
                     stopTTS.disabled = false;
                 };
                 utterance.onend = () => {
                     ttsStatus.textContent = 'Inactive';
+                    statusDot.classList.remove('status-active');
+                    statusDot.classList.add('status-inactive');
                     isTTSActive = false;
                     startTTS.disabled = false;
                     stopTTS.disabled = true;
                 };
                 speechSynthesis.speak(utterance);
             } else {
-                errorDiv.textContent = 'Text-to-speech not supported in this browser.';
+                showError('Text-to-speech not supported in this browser.');
                 startTTS.disabled = false;
                 stopTTS.disabled = true;
             }
@@ -590,12 +1079,13 @@
                 }
             }
             
-            // Also cancel browser's native speech synthesis
             if ('speechSynthesis' in window) {
                 speechSynthesis.cancel();
             }
             
             ttsStatus.textContent = 'Inactive';
+            statusDot.classList.remove('status-active');
+            statusDot.classList.add('status-inactive');
             isTTSActive = false;
             startTTS.disabled = false;
             stopTTS.disabled = true;
@@ -607,7 +1097,9 @@
             spokenText.textContent = 'None';
             ttsInput.value = '';
             ttsStatus.textContent = 'Inactive';
-            errorDiv.textContent = '';
+            statusDot.classList.remove('status-active');
+            statusDot.classList.add('status-inactive');
+            errorDiv.classList.remove('visible');
             
             if (isTTSActive) {
                 if (typeof responsiveVoice !== 'undefined' && responsiveVoice) {
@@ -618,7 +1110,6 @@
                     }
                 }
                 
-                // Also cancel browser's native speech synthesis
                 if ('speechSynthesis' in window) {
                     speechSynthesis.cancel();
                 }
@@ -645,23 +1136,20 @@
 
         // Initialize application on document load
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if MediaPipe modules are available
             if (!window.Hands) {
-                errorDiv.textContent = 'MediaPipe Hands module not loaded. Sign language detection will not work.';
+                showError('MediaPipe Hands module not loaded. Sign language detection will not work.');
             }
             
             if (!window.Camera) {
-                errorDiv.textContent += ' MediaPipe Camera module not loaded.';
+                showError('MediaPipe Camera module not loaded.');
             }
             
-            // Display browser info for debugging
             const userAgent = navigator.userAgent;
             console.log("User Agent:", userAgent);
             console.log("Is Mobile:", isMobile);
             
-            // Check if running on HTTPS
             if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                errorDiv.textContent = 'Warning: Camera access requires HTTPS for security. This site may not work properly.';
+                showError('Warning: Camera access requires HTTPS for security. This site may not work properly.');
             }
         });
 
