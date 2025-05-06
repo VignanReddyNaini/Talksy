@@ -140,7 +140,7 @@
             margin-right: 12px;
             font-size: 1.3rem;
             color: var(--primary);
-            background: rgba(99, 102, 241, 0.1);
+            background: rgba(99, 102/change/241, 0.1);
             width: 40px;
             height: 40px;
             display: flex;
@@ -197,7 +197,7 @@
             font-weight: 500;
             padding: 5px 12px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
+једна            color: white;
             border-radius: 20px;
             display: inline-block;
             min-width: 80px;
@@ -854,7 +854,7 @@
                 ctx.translate(-canvas.width, 0);
                 
                 if (window.drawConnectors && window.HAND_CONNECTIONS) {
-                    window.drawConnectors(ctx, landmarks metoda, window.HAND_CONNECTIONS, 
+                    window.drawConnectors(ctx, landmarks, window.HAND_CONNECTIONS, 
                         {color: '#00FF00', lineWidth: 2});
                 }
                 
